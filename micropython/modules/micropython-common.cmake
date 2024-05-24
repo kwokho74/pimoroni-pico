@@ -34,6 +34,7 @@ include(motor/micropython)
 
 # Utility
 include(adcfft/micropython)
+include(bsec2/micropython)
 
 # RTC (Badger 2040W, Enviro)
 if(PICO_BOARD STREQUAL "pico_w")
