@@ -1,9 +1,9 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/mphal.h"
+#include "py/misc.h"
 #include "bsec_datatypes.h"
 #include "bsec_interface.h"
-#include <stdio.h> 
 
 // Wrapper for bsec_get_version
 static mp_obj_t bsec_get_version_wrapper(void) {
@@ -168,7 +168,7 @@ static mp_obj_t bsec_sensor_control_wrapper(mp_obj_t timestamp_obj) {
     int64_t timestamp = (int64_t)mp_obj_get_int(timestamp_obj);
 
     // Print the timestamp for debugging purposes
-    printf("Timestamp: %lld\n", timestamp);
+    mp_printf(&mp_plat_print, "Timestamp: %lld\n", timestamp);
 
     bsec_bme_settings_t sensor_settings;
 
