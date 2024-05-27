@@ -139,7 +139,7 @@ static mp_obj_t bsec_update_subscription_wrapper(mp_obj_t requested_virtual_sens
     // Convert required_sensor_settings_configs to tuples
     mp_obj_t required_sensor_settings_tuple = mp_obj_new_list(n_required_sensor_settings, NULL);
     for (size_t i = 0; i < n_required_sensor_settings; i++) {
-        mp_obj_list_store(required_sensor_settings_tuple, i, sensor_configuration_to_tuple(&required_sensor_settings_configs[i]));
+        mp_obj_list_store(MP_OBJ_FROM_PTR(required_sensor_settings_tuple), MP_OBJ_NEW_SMALL_INT(i), sensor_configuration_to_tuple(&required_sensor_settings_configs[i]));
     }
 
     return required_sensor_settings_tuple;
