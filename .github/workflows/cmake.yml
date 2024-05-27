@@ -2,7 +2,11 @@ name: CMake
 
 on:
   push:
+    branches-ignore:
+      - '*'  # This will disable the workflow for all push events
   pull_request:
+    branches-ignore:
+      - '*'  # This will disable the workflow for all pull request events
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
