@@ -85,6 +85,67 @@ static mp_obj_t bsec_set_state_wrapper(mp_obj_t state_obj) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(bsec_set_state_obj, bsec_set_state_wrapper);
 
+// Helper function to convert a tuple to bsec_sensor_configuration_t
+static void tuple_to_sensor_configuration(mp_obj_t tuple, bsec_sensor_configuration_t *config) {
+    mp_obj_t *items;
+    size_t len;
+    mp_obj_get_array(tuple, &len, &items);
+    if (len != 2) {
+        mp_raise_ValueError("Tuple length must be 2");
+    }
+
+    config->sample_rate = mp_obj_get_float(items[0]);
+    config->sensor_id = mp_obj_get_int(items[1]);
+}
+
+// Helper function to convert bsec_sensor_configuration_t to tuple
+static mp_obj_t sensor_configuration_to_tuple(const bsec_sensor_configuration_t *config) {
+    mp_obj_t tuple[2];
+    tuple[0] = mp_obj_new_float(config->sample_rate);
+    tuple[1] = mp_obj_new_int(config->sensor_id);
+    return mp_obj_new_tuple(2, tuple);
+}
+
+// Wrapper for bsec_update_subscription
+static mp_obj_t bsec_update_subscription_wrapper(mp_obj_t requested_virtual_sensors_tuple) {
+    mp_obj_t *requested_virtual_sensors;
+    size_t n_requested_virtual_sensors;
+
+    // Get the tuples
+    mp_obj_get_array(requested_virtual_sensors_tuple, &n_requested_virtual_sensors, &requested_virtual_sensors);
+
+    bsec_sensor_configuration_t requested_virtual_sensors_configs[n_requested_virtual_sensors];
+    bsec_sensor_configuration_t required_sensor_settings_configs[BSEC_MAX_PHYSICAL_SENSOR];
+
+    // Convert requested virtual sensors tuples to bsec_sensor_configuration_t
+    for (size_t i = 0; i < n_requested_virtual_sensors; i++) {
+        tuple_to_sensor_configuration(requested_virtual_sensors[i], &requested_virtual_sensors_configs[i]);
+    }
+
+    uint8_t n_required_sensor_settings = BSEC_MAX_PHYSICAL_SENSOR;
+
+    // Call bsec_update_subscription
+    bsec_library_return_t result = bsec_update_subscription(
+        requested_virtual_sensors_configs,
+        n_requested_virtual_sensors,
+        required_sensor_settings_configs,
+        &n_required_sensor_settings
+    );
+
+    if (result != BSEC_OK) {
+        mp_raise_msg(&mp_type_RuntimeError, "Failed to update BSEC subscription");
+    }
+
+    // Convert required_sensor_settings_configs to tuples
+    mp_obj_t required_sensor_settings_tuple = mp_obj_new_list(n_required_sensor_settings, NULL);
+    for (size_t i = 0; i < n_required_sensor_settings; i++) {
+        mp_obj_list_store(required_sensor_settings_tuple, i, sensor_configuration_to_tuple(&required_sensor_settings_configs[i]));
+    }
+
+    return required_sensor_settings_tuple;
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(bsec_update_subscription_obj, bsec_update_subscription_wrapper);
+
 // Define all attributes of the module.
 // Table entries are key/value pairs of the attribute name (a string)
 // and the MicroPython object reference.
@@ -97,6 +158,7 @@ static const mp_rom_map_elem_t bsec2_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_set_configuration), MP_ROM_PTR(&bsec_set_configuration_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_state), MP_ROM_PTR(&bsec_get_state_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_state), MP_ROM_PTR(&bsec_set_state_obj) },
+    { MP_ROM_QSTR(MP_QSTR_update_subscription), MP_ROM_PTR(&bsec_update_subscription_obj) },
 };
 
 static MP_DEFINE_CONST_DICT(bsec_module_globals, bsec2_module_globals_table);
