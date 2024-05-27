@@ -3,6 +3,7 @@
 #include "py/mphal.h"
 #include "bsec_datatypes.h"
 #include "bsec_interface.h"
+#include <stdio.h> 
 
 // Wrapper for bsec_get_version
 static mp_obj_t bsec_get_version_wrapper(void) {
