@@ -64,7 +64,7 @@ static mp_obj_t bsec_get_state_wrapper(void) {
 
     return mp_obj_new_bytes(state_buffer, n_serialized_state);
 }
-static MP_DEFINE_CONST_FUN_OBJ_1(bsec_get_state_obj, bsec_get_state_wrapper);
+static MP_DEFINE_CONST_FUN_OBJ_0(bsec_get_state_obj, bsec_get_state_wrapper);
 
 // Wrapper for bsec_set_state
 static mp_obj_t bsec_set_state_wrapper(mp_obj_t state_obj) {
