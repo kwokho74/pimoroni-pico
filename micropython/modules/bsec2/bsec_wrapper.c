@@ -212,7 +212,7 @@ static mp_obj_t bsec_do_steps_wrapper(mp_obj_t inputs_tuple) {
         mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_sensor_id), mp_obj_new_int(outputs[i].sensor_id));
         mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_signal), mp_obj_new_float(outputs[i].signal));
         mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_time_stamp), mp_obj_new_int(outputs[i].time_stamp));
-        mp_obj_list_store(outputs_list, i, dict);
+        mp_obj_list_store(outputs_list, MP_OBJ_NEW_SMALL_INT(i), dict);
     }
 
     // Return a tuple with result and outputs
