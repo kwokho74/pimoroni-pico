@@ -164,7 +164,11 @@ static mp_obj_t sensor_settings_to_dict(const bsec_bme_settings_t *settings) {
 
 // Wrapper for bsec_sensor_control
 static mp_obj_t bsec_sensor_control_wrapper(mp_obj_t timestamp_obj) {
-    int64_t timestamp = mp_obj_get_int64(timestamp_obj);
+    int64_t timestamp = (int64_t)mp_obj_get_int(timestamp_obj);
+
+    // Print the timestamp for debugging purposes
+    printf("Timestamp: %lld\n", timestamp);
+
     bsec_bme_settings_t sensor_settings;
 
     bsec_library_return_t result = bsec_sensor_control(timestamp, &sensor_settings);
