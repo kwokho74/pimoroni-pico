@@ -168,7 +168,7 @@ static mp_obj_t bsec_sensor_control_wrapper(mp_obj_t timestamp_obj) {
     int64_t timestamp = (int64_t)mp_obj_get_int(timestamp_obj);
 
     // Print the timestamp for debugging purposes
-    mp_printf(&mp_plat_print, "Timestamp: %lld\n", timestamp);
+    mp_printf(&mp_plat_print, "Timestamp: %ld\n", timestamp);
 
     bsec_bme_settings_t sensor_settings;
 
