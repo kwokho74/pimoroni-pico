@@ -146,6 +146,36 @@ static mp_obj_t bsec_update_subscription_wrapper(mp_obj_t requested_virtual_sens
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(bsec_update_subscription_obj, bsec_update_subscription_wrapper);
 
+// Helper function to convert bsec_bme_settings_t to dictionary
+static mp_obj_t sensor_settings_to_dict(const bsec_bme_settings_t *settings) {
+    mp_obj_t dict = mp_obj_new_dict(0);
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_next_call), mp_obj_new_int(settings->next_call));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_process_data), mp_obj_new_int(settings->process_data));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_heater_temperature), mp_obj_new_int(settings->heater_temperature));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_heater_duration), mp_obj_new_int(settings->heater_duration));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_trigger_measurement), mp_obj_new_int(settings->trigger_measurement));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_op_mode), mp_obj_new_int(settings->op_mode));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_run_gas), mp_obj_new_int(settings->run_gas));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_pressure_oversampling), mp_obj_new_int(settings->pressure_oversampling));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_temperature_oversampling), mp_obj_new_int(settings->temperature_oversampling));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_humidity_oversampling), mp_obj_new_int(settings->humidity_oversampling));
+    return dict;
+}
+
+// Wrapper for bsec_sensor_control
+static mp_obj_t bsec_sensor_control_wrapper(mp_obj_t timestamp_obj) {
+    int64_t timestamp = mp_obj_get_int64(timestamp_obj);
+    bsec_bme_settings_t sensor_settings;
+
+    bsec_library_return_t result = bsec_sensor_control(timestamp, &sensor_settings);
+    if (result != BSEC_OK) {
+        mp_raise_msg(&mp_type_RuntimeError, "Failed to control BSEC sensor");
+    }
+
+    return sensor_settings_to_dict(&sensor_settings);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(bsec_sensor_control_obj, bsec_sensor_control_wrapper);
+
 // Define all attributes of the module.
 // Table entries are key/value pairs of the attribute name (a string)
 // and the MicroPython object reference.
@@ -159,6 +189,7 @@ static const mp_rom_map_elem_t bsec2_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_get_state), MP_ROM_PTR(&bsec_get_state_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_state), MP_ROM_PTR(&bsec_set_state_obj) },
     { MP_ROM_QSTR(MP_QSTR_update_subscription), MP_ROM_PTR(&bsec_update_subscription_obj) },
+    { MP_ROM_QSTR(MP_QSTR_sensor_control), MP_ROM_PTR(&bsec_sensor_control_obj) },
 };
 
 static MP_DEFINE_CONST_DICT(bsec_module_globals, bsec2_module_globals_table);
