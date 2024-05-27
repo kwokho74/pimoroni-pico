@@ -54,15 +54,17 @@ static MP_DEFINE_CONST_FUN_OBJ_1(bsec_set_configuration_obj, bsec_set_configurat
 // Wrapper for bsec_get_state
 static mp_obj_t bsec_get_state_wrapper(void) {
     uint8_t state_buffer[BSEC_MAX_STATE_BLOB_SIZE];
-    uint32_t n_serialized_state = BSEC_MAX_STATE_BLOB_SIZE;
-    bsec_library_return_t result = bsec_get_state(state_buffer, BSEC_MAX_STATE_BLOB_SIZE, &n_serialized_state);
+    uint8_t work_buffer[BSEC_MAX_WORKBUFFER_SIZE];
+    uint32_t n_serialized_state;
+
+    bsec_library_return_t result = bsec_get_state(0, state_buffer, BSEC_MAX_STATE_BLOB_SIZE, work_buffer, BSEC_MAX_WORKBUFFER_SIZE, &n_serialized_state);
     if (result != BSEC_OK) {
         mp_raise_msg(&mp_type_RuntimeError, "Failed to get BSEC state");
     }
 
     return mp_obj_new_bytes(state_buffer, n_serialized_state);
 }
-static MP_DEFINE_CONST_FUN_OBJ_0(bsec_get_state_obj, bsec_get_state_wrapper);
+static MP_DEFINE_CONST_FUN_OBJ_1(bsec_get_state_obj, bsec_get_state_wrapper);
 
 // Wrapper for bsec_set_state
 static mp_obj_t bsec_set_state_wrapper(mp_obj_t state_obj) {
