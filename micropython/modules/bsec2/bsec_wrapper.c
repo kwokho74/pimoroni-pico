@@ -164,7 +164,9 @@ static MP_DEFINE_CONST_FUN_OBJ_1(bsec_update_subscription_obj, bsec_update_subsc
 
 // Wrapper for bsec_sensor_control
 static mp_obj_t bsec_sensor_control_wrapper(mp_obj_t timestamp_obj) {
+    mp_printf(&mp_plat_print, "timestamp_obj1");
     int64_t timestamp = (int64_t)mp_obj_get_int(timestamp_obj);
+    mp_printf(&mp_plat_print, "timestamp_obj2");
 
     bsec_bme_settings_t sensor_settings;
 
