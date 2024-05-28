@@ -5,86 +5,18 @@
 #include "bsec_datatypes.h"
 #include "bsec_interface.h"
 
-// Wrapper for bsec_get_version
-static mp_obj_t bsec_get_version_wrapper(void) {
-    bsec_version_t version;
-    bsec_library_return_t result = bsec_get_version(&version);
-    if (result != BSEC_OK) {
-        mp_raise_msg(&mp_type_RuntimeError, "Calling BSEC library bsec_get_version failed");
-    }
-
-    mp_obj_t tuple[4];
-    tuple[0] = mp_obj_new_int(version.major);
-    tuple[1] = mp_obj_new_int(version.minor);
-    tuple[2] = mp_obj_new_int(version.major_bugfix);
-    tuple[3] = mp_obj_new_int(version.minor_bugfix);
-
-    return mp_obj_new_tuple(4, tuple);
+// Helper function to create a result tuple with a value
+static mp_obj_t to_result_tuple(bsec_library_return_t result, mp_obj_t value) {
+    mp_obj_t result_tuple[2];
+    result_tuple[0] = mp_obj_new_int(result);
+    result_tuple[1] = value;
+    return mp_obj_new_tuple(2, result_tuple);
 }
-static MP_DEFINE_CONST_FUN_OBJ_0(bsec_get_version_obj, bsec_get_version_wrapper);
 
-// Wrapper for bsec_init
-static mp_obj_t bsec_init_wrapper(void) {
-    bsec_library_return_t result = bsec_init();
-    if (result != BSEC_OK) {
-        mp_raise_msg(&mp_type_RuntimeError, "Calling BSEC library bsec_init failed");
-    }
-    return mp_const_none;
+// Helper function to create a result tuple with None
+static mp_obj_t to_result_tuple_none(bsec_library_return_t result) {
+    return to_result_tuple(result, mp_const_none);
 }
-static MP_DEFINE_CONST_FUN_OBJ_0(bsec_init_obj, bsec_init_wrapper);
-
-// Wrapper for bsec_set_configuration
-static mp_obj_t bsec_set_configuration_wrapper(mp_obj_t config_obj) {
-    mp_buffer_info_t config_bufinfo;
-    mp_get_buffer_raise(config_obj, &config_bufinfo, MP_BUFFER_READ);
-
-    if (config_bufinfo.len > BSEC_MAX_PROPERTY_BLOB_SIZE) {
-        mp_raise_ValueError("Configuration size too large");
-    }
-
-    uint8_t work_buffer[BSEC_MAX_WORKBUFFER_SIZE];
-    bsec_library_return_t result = bsec_set_configuration((const uint8_t *)config_bufinfo.buf, config_bufinfo.len, work_buffer, BSEC_MAX_WORKBUFFER_SIZE);
-    if (result != BSEC_OK) {
-        mp_raise_msg(&mp_type_RuntimeError, "Failed to set BSEC configuration");
-    }
-
-    return mp_const_none;
-}
-static MP_DEFINE_CONST_FUN_OBJ_1(bsec_set_configuration_obj, bsec_set_configuration_wrapper);
-
-// Wrapper for bsec_get_state
-static mp_obj_t bsec_get_state_wrapper(void) {
-    uint8_t state_buffer[BSEC_MAX_STATE_BLOB_SIZE];
-    uint8_t work_buffer[BSEC_MAX_WORKBUFFER_SIZE];
-    uint32_t n_serialized_state;
-
-    bsec_library_return_t result = bsec_get_state(0, state_buffer, BSEC_MAX_STATE_BLOB_SIZE, work_buffer, BSEC_MAX_WORKBUFFER_SIZE, &n_serialized_state);
-    if (result != BSEC_OK) {
-        mp_raise_msg(&mp_type_RuntimeError, "Failed to get BSEC state");
-    }
-
-    return mp_obj_new_bytes(state_buffer, n_serialized_state);
-}
-static MP_DEFINE_CONST_FUN_OBJ_0(bsec_get_state_obj, bsec_get_state_wrapper);
-
-// Wrapper for bsec_set_state
-static mp_obj_t bsec_set_state_wrapper(mp_obj_t state_obj) {
-    mp_buffer_info_t state_bufinfo;
-    mp_get_buffer_raise(state_obj, &state_bufinfo, MP_BUFFER_READ);
-
-    if (state_bufinfo.len > BSEC_MAX_STATE_BLOB_SIZE) {
-        mp_raise_ValueError("State size too large");
-    }
-
-    uint8_t work_buffer[BSEC_MAX_WORKBUFFER_SIZE];
-    bsec_library_return_t result = bsec_set_state((const uint8_t *)state_bufinfo.buf, state_bufinfo.len, work_buffer, BSEC_MAX_WORKBUFFER_SIZE);
-    if (result != BSEC_OK) {
-        mp_raise_msg(&mp_type_RuntimeError, "Failed to set BSEC state");
-    }
-
-    return mp_const_none;
-}
-static MP_DEFINE_CONST_FUN_OBJ_1(bsec_set_state_obj, bsec_set_state_wrapper);
 
 // Helper function to convert a tuple to bsec_sensor_configuration_t
 static void tuple_to_sensor_configuration(mp_obj_t tuple, bsec_sensor_configuration_t *config) {
@@ -107,6 +39,90 @@ static mp_obj_t sensor_configuration_to_tuple(const bsec_sensor_configuration_t 
     return mp_obj_new_tuple(2, tuple);
 }
 
+// Helper function to convert bsec_bme_settings_t to dictionary
+static mp_obj_t sensor_settings_to_dict(const bsec_bme_settings_t *settings) {
+    mp_obj_t dict = mp_obj_new_dict(0);
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_next_call), mp_obj_new_int(settings->next_call));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_process_data), mp_obj_new_int(settings->process_data));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_heater_temperature), mp_obj_new_int(settings->heater_temperature));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_heater_duration), mp_obj_new_int(settings->heater_duration));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_trigger_measurement), mp_obj_new_int(settings->trigger_measurement));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_op_mode), mp_obj_new_int(settings->op_mode));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_run_gas), mp_obj_new_int(settings->run_gas));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_pressure_oversampling), mp_obj_new_int(settings->pressure_oversampling));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_temperature_oversampling), mp_obj_new_int(settings->temperature_oversampling));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_humidity_oversampling), mp_obj_new_int(settings->humidity_oversampling));
+    return dict;
+}
+
+// Wrapper for bsec_get_version
+static mp_obj_t bsec_get_version_wrapper(void) {
+    bsec_version_t version;
+    bsec_library_return_t result = bsec_get_version(&version);
+    if (result != BSEC_OK) {
+        return to_result_tuple_none(result);
+    }
+
+    mp_obj_t version_tuple[4];
+    version_tuple[0] = mp_obj_new_int(version.major);
+    version_tuple[1] = mp_obj_new_int(version.minor);
+    version_tuple[2] = mp_obj_new_int(version.major_bugfix);
+    version_tuple[3] = mp_obj_new_int(version.minor_bugfix);
+    return to_result_tuple(result, mp_obj_new_tuple(4, version_tuple));
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(bsec_get_version_obj, bsec_get_version_wrapper);
+
+// Wrapper for bsec_init
+static mp_obj_t bsec_init_wrapper(void) {
+    bsec_library_return_t result = bsec_init();
+    return mp_obj_new_int(result);
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(bsec_init_obj, bsec_init_wrapper);
+
+// Wrapper for bsec_set_configuration
+static mp_obj_t bsec_set_configuration_wrapper(mp_obj_t config_obj) {
+    mp_buffer_info_t config_bufinfo;
+    mp_get_buffer_raise(config_obj, &config_bufinfo, MP_BUFFER_READ);
+
+    if (config_bufinfo.len > BSEC_MAX_PROPERTY_BLOB_SIZE) {
+        mp_raise_ValueError("Configuration size too large");
+    }
+
+    uint8_t work_buffer[BSEC_MAX_WORKBUFFER_SIZE];
+    bsec_library_return_t result = bsec_set_configuration((const uint8_t *)config_bufinfo.buf, config_bufinfo.len, work_buffer, BSEC_MAX_WORKBUFFER_SIZE);
+    return mp_obj_new_int(result);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(bsec_set_configuration_obj, bsec_set_configuration_wrapper);
+
+// Wrapper for bsec_get_state
+static mp_obj_t bsec_get_state_wrapper(void) {
+    uint8_t state_buffer[BSEC_MAX_STATE_BLOB_SIZE];
+    uint8_t work_buffer[BSEC_MAX_WORKBUFFER_SIZE];
+    uint32_t n_serialized_state;
+    bsec_library_return_t result = bsec_get_state(0, state_buffer, BSEC_MAX_STATE_BLOB_SIZE, work_buffer, BSEC_MAX_WORKBUFFER_SIZE, &n_serialized_state);
+    if (result != BSEC_OK) {
+        return to_result_tuple_none(result);
+    }
+
+    return to_result_tuple(result, mp_obj_new_bytes(state_buffer, n_serialized_state));
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(bsec_get_state_obj, bsec_get_state_wrapper);
+
+// Wrapper for bsec_set_state
+static mp_obj_t bsec_set_state_wrapper(mp_obj_t state_obj) {
+    mp_buffer_info_t state_bufinfo;
+    mp_get_buffer_raise(state_obj, &state_bufinfo, MP_BUFFER_READ);
+
+    if (state_bufinfo.len > BSEC_MAX_STATE_BLOB_SIZE) {
+        mp_raise_ValueError("State size too large");
+    }
+
+    uint8_t work_buffer[BSEC_MAX_WORKBUFFER_SIZE];
+    bsec_library_return_t result = bsec_set_state((const uint8_t *)state_bufinfo.buf, state_bufinfo.len, work_buffer, BSEC_MAX_WORKBUFFER_SIZE);
+    return mp_obj_new_int(result);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(bsec_set_state_obj, bsec_set_state_wrapper);
+
 // Wrapper for bsec_update_subscription
 static mp_obj_t bsec_update_subscription_wrapper(mp_obj_t requested_virtual_sensors_tuple) {
     mp_obj_t *requested_virtual_sensors;
@@ -125,7 +141,6 @@ static mp_obj_t bsec_update_subscription_wrapper(mp_obj_t requested_virtual_sens
 
     uint8_t n_required_sensor_settings = BSEC_MAX_PHYSICAL_SENSOR;
 
-    // Call bsec_update_subscription
     bsec_library_return_t result = bsec_update_subscription(
         requested_virtual_sensors_configs,
         n_requested_virtual_sensors,
@@ -134,7 +149,7 @@ static mp_obj_t bsec_update_subscription_wrapper(mp_obj_t requested_virtual_sens
     );
 
     if (result != BSEC_OK) {
-        mp_raise_msg(&mp_type_RuntimeError, "Failed to update BSEC subscription");
+        return to_result_tuple_none(result);
     }
 
     // Convert required_sensor_settings_configs to tuples
@@ -143,25 +158,9 @@ static mp_obj_t bsec_update_subscription_wrapper(mp_obj_t requested_virtual_sens
         mp_obj_list_store(MP_OBJ_FROM_PTR(required_sensor_settings_tuple), MP_OBJ_NEW_SMALL_INT(i), sensor_configuration_to_tuple(&required_sensor_settings_configs[i]));
     }
 
-    return required_sensor_settings_tuple;
+    return to_result_tuple(result, required_sensor_settings_tuple);
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(bsec_update_subscription_obj, bsec_update_subscription_wrapper);
-
-// Helper function to convert bsec_bme_settings_t to dictionary
-static mp_obj_t sensor_settings_to_dict(const bsec_bme_settings_t *settings) {
-    mp_obj_t dict = mp_obj_new_dict(0);
-    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_next_call), mp_obj_new_int(settings->next_call));
-    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_process_data), mp_obj_new_int(settings->process_data));
-    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_heater_temperature), mp_obj_new_int(settings->heater_temperature));
-    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_heater_duration), mp_obj_new_int(settings->heater_duration));
-    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_trigger_measurement), mp_obj_new_int(settings->trigger_measurement));
-    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_op_mode), mp_obj_new_int(settings->op_mode));
-    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_run_gas), mp_obj_new_int(settings->run_gas));
-    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_pressure_oversampling), mp_obj_new_int(settings->pressure_oversampling));
-    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_temperature_oversampling), mp_obj_new_int(settings->temperature_oversampling));
-    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_humidity_oversampling), mp_obj_new_int(settings->humidity_oversampling));
-    return dict;
-}
 
 // Wrapper for bsec_sensor_control
 static mp_obj_t bsec_sensor_control_wrapper(mp_obj_t timestamp_obj) {
@@ -171,10 +170,10 @@ static mp_obj_t bsec_sensor_control_wrapper(mp_obj_t timestamp_obj) {
 
     bsec_library_return_t result = bsec_sensor_control(timestamp, &sensor_settings);
     if (result != BSEC_OK) {
-        mp_raise_msg(&mp_type_RuntimeError, "Failed to control BSEC sensor");
+        return to_result_tuple_none(result);
     }
 
-    return sensor_settings_to_dict(&sensor_settings);
+    return to_result_tuple(result, sensor_settings_to_dict(&sensor_settings));
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(bsec_sensor_control_obj, bsec_sensor_control_wrapper);
 
@@ -204,6 +203,9 @@ static mp_obj_t bsec_do_steps_wrapper(mp_obj_t inputs_tuple) {
     uint8_t n_outputs = BSEC_NUMBER_OUTPUTS;
 
     bsec_library_return_t result = bsec_do_steps(bsec_inputs, n_inputs, outputs, &n_outputs);
+    if (result != BSEC_OK) {
+        return to_result_tuple_none(result);
+    }
 
     // Convert outputs to list of dictionaries
     mp_obj_t outputs_list = mp_obj_new_list(n_outputs, NULL);
@@ -215,12 +217,7 @@ static mp_obj_t bsec_do_steps_wrapper(mp_obj_t inputs_tuple) {
         mp_obj_list_store(outputs_list, MP_OBJ_NEW_SMALL_INT(i), dict);
     }
 
-    // Return a tuple with result and outputs
-    mp_obj_t result_tuple[2];
-    result_tuple[0] = mp_obj_new_int(result);
-    result_tuple[1] = outputs_list;
-
-    return mp_obj_new_tuple(2, result_tuple);
+    return to_result_tuple(result, outputs_list);
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(bsec_do_steps_obj, bsec_do_steps_wrapper);
 
