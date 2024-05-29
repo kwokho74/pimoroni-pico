@@ -219,8 +219,8 @@ static mp_obj_t bsec_do_steps_wrapper(mp_obj_t inputs_tuple) {
         mp_obj_t dict = mp_obj_new_dict(0);
         mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_sensor_id), mp_obj_new_int(outputs[i].sensor_id));
         mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_signal), mp_obj_new_float(outputs[i].signal));
-        mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_time_stamp_high), mp_obj_new_int(outputs[i].time_stamp) >> 32 & 0xFFFFFFFF);
-        mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_time_stamp_low), mp_obj_new_int(outputs[i].time_stamp) & 0xFFFFFFFF);
+        mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_time_stamp_high), mp_obj_new_int((uint32_t)(outputs[i].time_stamp >> 32) & 0xFFFFFFFF));
+        mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_time_stamp_low), mp_obj_new_int((uint32_t)outputs[i].time_stamp & 0xFFFFFFFF));
         mp_obj_list_store(outputs_list, MP_OBJ_NEW_SMALL_INT(i), dict);
     }
 
