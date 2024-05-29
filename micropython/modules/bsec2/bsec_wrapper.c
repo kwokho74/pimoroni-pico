@@ -168,7 +168,7 @@ static mp_obj_t bsec_sensor_control_wrapper(mp_obj_t time_stamp_high_obj, mp_obj
     mp_printf(&mp_plat_print, "timestamp_obj1\n");
     uint32_t time_stamp_high = (uint32_t)mp_obj_get_int(time_stamp_high_obj);
     mp_printf(&mp_plat_print, "timestamp_high: %u\n", time_stamp_high);
-    uint32_t time_stamp_low = (uint32_t)mp_obj_get_int(time_stamp_low_obj);
+    uint32_t time_stamp_low = (uint32_t)mp_obj_get_int_truncated(time_stamp_low_obj);
     mp_printf(&mp_plat_print, "timestamp_low: %u\n", time_stamp_low);
     int64_t time_stamp = ((int64_t)time_stamp_high << 32) | time_stamp_low;
     mp_printf(&mp_plat_print, "timestamp_obj4\n");
