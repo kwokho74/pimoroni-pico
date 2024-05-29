@@ -42,8 +42,8 @@ static mp_obj_t sensor_configuration_to_tuple(const bsec_sensor_configuration_t 
 // Helper function to convert bsec_bme_settings_t to dictionary
 static mp_obj_t sensor_settings_to_dict(const bsec_bme_settings_t *settings) {
     mp_obj_t dict = mp_obj_new_dict(0);
-    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_next_call_high), mp_obj_new_int(settings->next_call >> 32 & 0xFFFFFFFF));
-    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_next_call_low), mp_obj_new_int(settings->next_call & 0xFFFFFFFF));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_next_call_high), mp_obj_new_int_from_uint(settings->next_call >> 32 & 0xFFFFFFFF));
+    mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_next_call_low), mp_obj_new_int_from_uint(settings->next_call & 0xFFFFFFFF));
     mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_process_data), mp_obj_new_int(settings->process_data));
     mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_heater_temperature), mp_obj_new_int(settings->heater_temperature));
     mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_heater_duration), mp_obj_new_int(settings->heater_duration));
@@ -165,13 +165,11 @@ static MP_DEFINE_CONST_FUN_OBJ_1(bsec_update_subscription_obj, bsec_update_subsc
 
 // Wrapper for bsec_sensor_control
 static mp_obj_t bsec_sensor_control_wrapper(mp_obj_t time_stamp_high_obj, mp_obj_t time_stamp_low_obj) {
-    mp_printf(&mp_plat_print, "timestamp_obj1\n");
-    uint32_t time_stamp_high = (uint32_t)mp_obj_get_int(time_stamp_high_obj);
+    uint32_t time_stamp_high = (uint32_t)mp_obj_get_int_truncated(time_stamp_high_obj);
     mp_printf(&mp_plat_print, "timestamp_high: %u\n", time_stamp_high);
     uint32_t time_stamp_low = (uint32_t)mp_obj_get_int_truncated(time_stamp_low_obj);
     mp_printf(&mp_plat_print, "timestamp_low: %u\n", time_stamp_low);
     int64_t time_stamp = ((int64_t)time_stamp_high << 32) | time_stamp_low;
-    mp_printf(&mp_plat_print, "timestamp_obj4\n");
 
     bsec_bme_settings_t sensor_settings;
     bsec_library_return_t result = bsec_sensor_control(time_stamp, &sensor_settings);
@@ -219,8 +217,8 @@ static mp_obj_t bsec_do_steps_wrapper(mp_obj_t inputs_tuple) {
         mp_obj_t dict = mp_obj_new_dict(0);
         mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_sensor_id), mp_obj_new_int(outputs[i].sensor_id));
         mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_signal), mp_obj_new_float(outputs[i].signal));
-        mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_time_stamp_high), mp_obj_new_int((uint32_t)(outputs[i].time_stamp >> 32) & 0xFFFFFFFF));
-        mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_time_stamp_low), mp_obj_new_int((uint32_t)outputs[i].time_stamp & 0xFFFFFFFF));
+        mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_time_stamp_high), mp_obj_new_int_from_uint((uint32_t)(outputs[i].time_stamp >> 32) & 0xFFFFFFFF));
+        mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_time_stamp_low), mp_obj_new_int_from_uint((uint32_t)outputs[i].time_stamp & 0xFFFFFFFF));
         mp_obj_list_store(outputs_list, MP_OBJ_NEW_SMALL_INT(i), dict);
     }
 
