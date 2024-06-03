@@ -19,7 +19,7 @@ namespace pimoroni {
         device.read = (bme68x_read_fptr_t)&read_bytes;
         device.write = (bme68x_write_fptr_t)&write_bytes;
         device.delay_us = (bme68x_delay_us_fptr_t)&delay_us;
-        device.amb_temp = 20;
+        device.amb_temp = 25;
 
         result = bme68x_init(&device);
         bme68x_check_rslt("bme68x_init", result);
