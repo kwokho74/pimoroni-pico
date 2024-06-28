@@ -4,6 +4,46 @@
 #include "py/misc.h"
 #include "bsec_datatypes.h"
 #include "bsec_interface.h"
+#include "extmod/vfs.h"
+#include "extmod/vfs_fat.h"
+#include <stdio.h>
+
+// Function to list and print files in the root directory
+STATIC mp_obj_t list_and_print_files(void) {
+    // Access the root directory
+    const char *path = "/";
+    mp_vfs_mount_t *vfs = MP_STATE_VM(vfs_mount_table);
+    
+    // Ensure there is a mounted filesystem
+    if (vfs == NULL) {
+        mp_raise_msg(&mp_type_OSError, "No filesystem mounted");
+    }
+
+    // Open the root directory
+    FILINFO fno;
+    DIR dir;
+    FRESULT res;
+
+    res = f_opendir(&vfs->fatfs, &dir, path);
+    if (res != FR_OK) {
+        mp_raise_OSError(MP_EIO);
+    }
+
+    // List and print files in the directory
+    for (;;) {
+        res = f_readdir(&dir, &fno);
+        if (res != FR_OK || fno.fname[0] == 0) break;  // Break on error or end of dir
+        if (fno.fname[0] == '.') continue;             // Ignore dot entry
+
+        // Print file name using MicroPython's printing function
+        mp_printf(&mp_plat_print, "%s\n", fno.fname);
+    }
+
+    f_closedir(&dir);
+
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(list_and_print_files_obj, list_and_print_files);
 
 // Combine high and low 32-bit integers into a 64-bit integer
 static int64_t from_uint_high_low(uint32_t high, uint32_t low) {
@@ -19,6 +59,34 @@ static uint32_t to_uint_high(int64_t value) {
 static uint32_t to_uint_low(int64_t value) {
     return (uint32_t)value & 0xFFFFFFFF;
 }
+
+// Create a function to list the file names in the root directory of the raspberry pi pico
+static mp_obj_t list_files(mp_obj_t path) {
+    // open a file for reading
+    mp_obj_t file = mp_vfs_open(path, "r");
+    if (file == MP_OBJ_NULL) {
+        mp_raise_OSError(MP_ENOENT);
+    }
+
+    // read the file
+    vstr_t vstr;
+    vstr_init(&vstr, 32);
+    while (1) {
+        char c = mp_vfs_read_byte(file);
+        if (c == MP_READER_EOF) {
+            break;
+        }
+        vstr_add_byte(&vstr, c);
+    }
+
+    // close the file
+    mp_vfs_close(file);
+
+    // return the file contents as a string
+    return mp_obj_new_str_from_vstr(&mp_type_str, &vstr);
+}
+
+
 
 // Helper function to create a result tuple with a value
 static mp_obj_t to_result_tuple(bsec_library_return_t result, mp_obj_t value) {
@@ -147,6 +215,11 @@ static mp_obj_t bsec_update_subscription_wrapper(mp_obj_t requested_virtual_sens
     // Get the tuples
     mp_obj_get_array(requested_virtual_sensors_tuple, &n_requested_virtual_sensors, &requested_virtual_sensors);
 
+    // open a file for reading
+    
+    
+    
+
     bsec_sensor_configuration_t requested_virtual_sensors_configs[n_requested_virtual_sensors];
     bsec_sensor_configuration_t required_sensor_settings_configs[BSEC_MAX_PHYSICAL_SENSOR];
 
@@ -254,6 +327,7 @@ static const mp_rom_map_elem_t bsec2_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_update_subscription), MP_ROM_PTR(&bsec_update_subscription_obj) },
     { MP_ROM_QSTR(MP_QSTR_sensor_control), MP_ROM_PTR(&bsec_sensor_control_obj) },
     { MP_ROM_QSTR(MP_QSTR_do_steps), MP_ROM_PTR(&bsec_do_steps_obj) },
+    { MP_ROM_QSTR(MP_QSTR_list_and_print_files), MP_ROM_PTR(&list_and_print_files_obj) },
 };
 
 static MP_DEFINE_CONST_DICT(bsec_module_globals, bsec2_module_globals_table);
