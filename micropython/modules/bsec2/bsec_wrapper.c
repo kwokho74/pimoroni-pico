@@ -6,27 +6,21 @@
 #include "bsec_interface.h"
 #include "extmod/vfs.h"
 #include "extmod/vfs_fat.h"
-#include <stdio.h>
+#include "lib/oofatfs/ff.h"
+#include "lib/oofatfs/ffconf.h"
 
 // Function to list and print files in the root directory
 STATIC mp_obj_t list_and_print_files(void) {
-    // Access the root directory
     const char *path = "/";
-    mp_vfs_mount_t *vfs = MP_STATE_VM(vfs_mount_table);
     
-    // Ensure there is a mounted filesystem
-    if (vfs == NULL) {
-        mp_raise_msg(&mp_type_OSError, "No filesystem mounted");
-    }
-
     // Open the root directory
+    FF_DIR dir;
     FILINFO fno;
-    DIR dir;
     FRESULT res;
 
-    res = f_opendir(&vfs->fatfs, &dir, path);
+    res = f_opendir(&dir, path);
     if (res != FR_OK) {
-        mp_raise_OSError(MP_EIO);
+        mp_raise_OSError(MP_ENOENT);
     }
 
     // List and print files in the directory
