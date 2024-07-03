@@ -7,33 +7,45 @@
 #include "extmod/vfs.h"
 #include "extmod/vfs_fat.h"
 #include "lib/oofatfs/ff.h"
-#include "lib/oofatfs/ffconf.h"
 
 // Function to list and print files in the root directory
-STATIC mp_obj_t list_and_print_files(void) {
-    const char *path = "/";
-    
-    // Open the root directory
-    FF_DIR dir;
-    FILINFO fno;
+STATIC mp_obj_t list_and_print_files(mp_obj_t file_name_obj) {
+    const char *file_name = mp_obj_str_get_str(file_name_obj);
+    FATFS *fs;
+    FIL fil;
     FRESULT res;
+    UINT br;
 
-    res = f_opendir(&dir, path);
+    // Get the filesystem object
+    mp_vfs_mount_t *vfs = MP_STATE_VM(vfs_mount_table);
+    if (vfs == NULL || vfs->obj == mp_const_none) {
+        mp_raise_msg(&mp_type_OSError, "No filesystem mounted");
+    }
+    fs = &((fs_user_mount_t*)MP_OBJ_TO_PTR(vfs->obj))->fatfs;
+
+    // Open the file
+    res = f_open(fs, &fil, file_name, FA_READ);
     if (res != FR_OK) {
         mp_raise_OSError(MP_ENOENT);
     }
 
-    // List and print files in the directory
-    for (;;) {
-        res = f_readdir(&dir, &fno);
-        if (res != FR_OK || fno.fname[0] == 0) break;  // Break on error or end of dir
-        if (fno.fname[0] == '.') continue;             // Ignore dot entry
+    // Get the file size
+    FSIZE_t file_size = f_size(&fil);
 
-        // Print file name using MicroPython's printing function
-        mp_printf(&mp_plat_print, "%s\n", fno.fname);
+    // Allocate a buffer to hold the file contents
+    byte *buf = m_new(byte, file_size);
+
+    // Read the file into the buffer
+    res = f_read(&fil, buf, file_size, &br);
+    if (res != FR_OK || br != file_size) {
+        f_close(&fil);
+        mp_raise_OSError(MP_EIO);
     }
 
-    f_closedir(&dir);
+    // Close the file
+    f_close(&fil);
+
+    // Return the buffer as a MicroPython byte array
 
     return mp_const_none;
 }
