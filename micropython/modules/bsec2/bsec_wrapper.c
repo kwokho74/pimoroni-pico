@@ -9,8 +9,27 @@
 #include "lib/oofatfs/ff.h"
 
 STATIC mp_obj_t list_and_print_files(mp_obj_t file_name_obj) {
-    // open a file for reading
-    mp_obj_t file = mp_vfs_open(file_name_obj, "r");
+   // Convert the MicroPython string object to a C string
+    const char *file_name = mp_obj_str_get_str(file_name_obj);
+
+    // Arguments to pass to mp_vfs_open
+    mp_obj_t args[2];
+    args[0] = mp_obj_new_str(file_name, strlen(file_name));
+    args[1] = mp_obj_new_str("rb", 2);  // Open the file in read-binary mode
+
+    // Open the file
+    mp_obj_t file_obj = mp_vfs_open(MP_ARRAY_SIZE(args), args, mp_const_empty_map);
+
+    // Check if the file was opened successfully
+    if (file_obj == MP_OBJ_NULL) {
+        mp_raise_OSError(MP_ENOENT);
+    }
+
+    // Use file_obj for further file operations (e.g., reading)
+    // ...
+
+    // Remember to close the file when done
+    mp_vfs_close(file_obj);
 
     return mp_const_none;
 }
@@ -30,34 +49,6 @@ static uint32_t to_uint_high(int64_t value) {
 static uint32_t to_uint_low(int64_t value) {
     return (uint32_t)value & 0xFFFFFFFF;
 }
-
-// Create a function to list the file names in the root directory of the raspberry pi pico
-static mp_obj_t list_files(mp_obj_t path) {
-    // open a file for reading
-    mp_obj_t file = mp_vfs_open(path, "r");
-    if (file == MP_OBJ_NULL) {
-        mp_raise_OSError(MP_ENOENT);
-    }
-
-    // read the file
-    vstr_t vstr;
-    vstr_init(&vstr, 32);
-    while (1) {
-        char c = mp_vfs_read_byte(file);
-        if (c == MP_READER_EOF) {
-            break;
-        }
-        vstr_add_byte(&vstr, c);
-    }
-
-    // close the file
-    mp_vfs_close(file);
-
-    // return the file contents as a string
-    return mp_obj_new_str_from_vstr(&mp_type_str, &vstr);
-}
-
-
 
 // Helper function to create a result tuple with a value
 static mp_obj_t to_result_tuple(bsec_library_return_t result, mp_obj_t value) {
