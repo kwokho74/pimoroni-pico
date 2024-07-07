@@ -28,18 +28,31 @@ STATIC mp_obj_t list_and_print_files(mp_obj_t file_name_obj) {
         mp_raise_OSError(2);
     }
 
-    mp_obj_t file_size_obj = mp_obj_len(file_obj);
-    mp_int_t file_size = mp_obj_get_int(file_size_obj);
-    mp_printf(&mp_plat_print, "File size: %d\n", file_size);
-    
+    FILINFO fno;
+    FRESULT res = f_stat(file_name, &fno);
+    if (res != FR_OK) {
+        mp_raise_OSError(MP_EIO);
+    }
+    mp_int_t file_size = fno.fsize;
 
-    vstr_t vstr;
-    vstr_init_len(&vstr, file_size);
+    // Allocate a buffer to hold the file contents
+    byte *buf = m_new(byte, file_size);
 
-    // Remember to close the file when done
-    // mp_vfs_close(file_obj);
+    // Read the file into the buffer
+    mp_obj_t read_args[1];
+    read_args[0] = mp_obj_new_bytearray(file_size, buf);
+    mp_obj_t read_ret = mp_call_method_n_kw(1, 0, read_args, file_obj);
 
-    return mp_const_none;
+    // Check if the read operation was successful
+    if (mp_obj_get_int(read_ret) != file_size) {
+        mp_raise_OSError(MP_EIO);
+    }
+
+    // Close the file
+    mp_call_method_n_kw(0, 0, file_obj);
+
+    // Return the buffer as a MicroPython byte array
+    return mp_obj_new_bytes(buf, file_size);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(list_and_print_files_obj, list_and_print_files);
 
