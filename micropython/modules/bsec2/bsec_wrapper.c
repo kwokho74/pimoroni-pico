@@ -24,9 +24,9 @@ STATIC mp_obj_t list_and_print_files(mp_obj_t file_name_obj) {
 
 
     // Check if the file was opened successfully
-    // if (file_obj == MP_OBJ_NULL) {
-    //     mp_raise_OSError(2);
-    // }
+    if (file_obj == MP_OBJ_NULL) {
+        mp_raise_OSError(2);
+    }
 
     // Use file_obj for further file operations (e.g., reading)
     // ...
@@ -36,7 +36,7 @@ STATIC mp_obj_t list_and_print_files(mp_obj_t file_name_obj) {
 
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(list_and_print_files_obj, list_and_print_files);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(list_and_print_files_obj, list_and_print_files);
 
 // Combine high and low 32-bit integers into a 64-bit integer
 static int64_t from_uint_high_low(uint32_t high, uint32_t low) {
