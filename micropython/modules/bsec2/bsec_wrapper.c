@@ -28,8 +28,13 @@ STATIC mp_obj_t list_and_print_files(mp_obj_t file_name_obj) {
         mp_raise_OSError(2);
     }
 
-    // Use file_obj for further file operations (e.g., reading)
-    // ...
+    mp_obj_t file_size_obj = mp_obj_len(file_obj);
+    mp_int_t file_size = mp_obj_get_int(file_size_obj);
+    mp_printf(&mp_plat_print, "File size: %d\n", file_size);
+    
+
+    vstr_t vstr;
+    vstr_init_len(&vstr, file_size);
 
     // Remember to close the file when done
     // mp_vfs_close(file_obj);
