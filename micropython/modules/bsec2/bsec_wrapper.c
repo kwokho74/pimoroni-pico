@@ -1,3 +1,4 @@
+#include <string.h>
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/mphal.h"
@@ -18,18 +19,20 @@ STATIC mp_obj_t list_and_print_files(mp_obj_t file_name_obj) {
     args[1] = mp_obj_new_str("rb", 2);  // Open the file in read-binary mode
 
     // Open the file
-    mp_obj_t file_obj = mp_vfs_open(MP_ARRAY_SIZE(args), args, mp_const_empty_map);
+    // mp_obj_t file_obj = mp_vfs_open(MP_ARRAY_SIZE(args), args, mp_const_empty_map);
+    mp_obj_t file_obj = mp_vfs_open(MP_ARRAY_SIZE(args), args, (mp_map_t*)&mp_const_empty_map);
+
 
     // Check if the file was opened successfully
-    if (file_obj == MP_OBJ_NULL) {
-        mp_raise_OSError(MP_ENOENT);
-    }
+    // if (file_obj == MP_OBJ_NULL) {
+    //     mp_raise_OSError(2);
+    // }
 
     // Use file_obj for further file operations (e.g., reading)
     // ...
 
     // Remember to close the file when done
-    mp_vfs_close(file_obj);
+    // mp_vfs_close(file_obj);
 
     return mp_const_none;
 }
