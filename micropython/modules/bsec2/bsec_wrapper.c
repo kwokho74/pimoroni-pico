@@ -9,53 +9,6 @@
 #include "extmod/vfs_fat.h"
 #include "lib/oofatfs/ff.h"
 
-STATIC mp_obj_t list_and_print_files(mp_obj_t file_name_obj) {
-   // Convert the MicroPython string object to a C string
-    const char *file_name = mp_obj_str_get_str(file_name_obj);
-
-    // Arguments to pass to mp_vfs_open
-    mp_obj_t args[2];
-    args[0] = mp_obj_new_str(file_name, strlen(file_name));
-    args[1] = mp_obj_new_str("rb", 2);  // Open the file in read-binary mode
-
-    // Open the file
-    // mp_obj_t file_obj = mp_vfs_open(MP_ARRAY_SIZE(args), args, mp_const_empty_map);
-    mp_obj_t file_obj = mp_vfs_open(MP_ARRAY_SIZE(args), args, (mp_map_t*)&mp_const_empty_map);
-
-
-    // Check if the file was opened successfully
-    if (file_obj == MP_OBJ_NULL) {
-        mp_raise_OSError(2);
-    }
-
-    FILINFO fno;
-    FRESULT res = f_stat(file_name, &fno);
-    if (res != FR_OK) {
-        mp_raise_OSError(MP_EIO);
-    }
-    mp_int_t file_size = fno.fsize;
-
-    // Allocate a buffer to hold the file contents
-    byte *buf = m_new(byte, file_size);
-
-    // Read the file into the buffer
-    mp_obj_t read_args[1];
-    read_args[0] = mp_obj_new_bytearray(file_size, buf);
-    mp_obj_t read_ret = mp_call_method_n_kw(1, 0, read_args, file_obj);
-
-    // Check if the read operation was successful
-    if (mp_obj_get_int(read_ret) != file_size) {
-        mp_raise_OSError(MP_EIO);
-    }
-
-    // Close the file
-    mp_call_method_n_kw(0, 0, file_obj);
-
-    // Return the buffer as a MicroPython byte array
-    return mp_obj_new_bytes(buf, file_size);
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(list_and_print_files_obj, list_and_print_files);
-
 // Combine high and low 32-bit integers into a 64-bit integer
 static int64_t from_uint_high_low(uint32_t high, uint32_t low) {
     return ((int64_t)high << 32) | low;
@@ -310,7 +263,6 @@ static const mp_rom_map_elem_t bsec2_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_update_subscription), MP_ROM_PTR(&bsec_update_subscription_obj) },
     { MP_ROM_QSTR(MP_QSTR_sensor_control), MP_ROM_PTR(&bsec_sensor_control_obj) },
     { MP_ROM_QSTR(MP_QSTR_do_steps), MP_ROM_PTR(&bsec_do_steps_obj) },
-    { MP_ROM_QSTR(MP_QSTR_list_and_print_files), MP_ROM_PTR(&list_and_print_files_obj) },
 };
 
 static MP_DEFINE_CONST_DICT(bsec_module_globals, bsec2_module_globals_table);
