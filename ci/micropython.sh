@@ -14,8 +14,10 @@ function log_warning {
 
 function micropython_clone {
     log_inform "Using MicroPython $MICROPYTHON_VERSION"
-    git clone https://github.com/micropython/micropython --depth=1 --branch=$MICROPYTHON_VERSION
+    git clone https://github.com/micropython/micropython
     cd micropython
+    git checkout $MICROPYTHON_VERSION
+    git cherry-pick -n 932f76c6ba64c5a3e68de3324556d9979f09303b
     git submodule update --init lib/pico-sdk
     git submodule update --init lib/cyw43-driver
     git submodule update --init lib/lwip
@@ -41,12 +43,6 @@ function apt_install_build_deps {
 function micropython_version {
     echo "MICROPY_GIT_TAG=$MICROPYTHON_VERSION, $BOARD_NAME $TAG_OR_SHA" >> $GITHUB_ENV
     echo "MICROPY_GIT_HASH=$MICROPYTHON_VERSION-$TAG_OR_SHA" >> $GITHUB_ENV
-}
-
-function hack_patch_micropython_disable_exceptions {
-    cd micropython
-    git apply $PIMORONI_PICO_DIR/micropython/micropython_nano_specs.patch
-    cd ../
 }
 
 function hack_patch_pico_sdk {

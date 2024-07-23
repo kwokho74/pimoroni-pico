@@ -7,7 +7,7 @@ on:
     types: [created]
 
 env:
-  MICROPYTHON_VERSION: v1.22.2
+  MICROPYTHON_VERSION: v1.23.0
 
 jobs:
   build:
@@ -19,6 +19,8 @@ jobs:
         include:
         # - name: pico
         #   board: RPI_PICO
+        # - name: pico_usb
+        #   board: RPI_PICO_USB
         - name: picow
           board: RPI_PICO_W
         # - name: tiny2040_8mb
@@ -42,7 +44,7 @@ jobs:
 
     env:
       # MicroPython version will be contained in github.event.release.tag_name for releases
-      RELEASE_FILE: pimoroni-${{ matrix.name }}-${{ github.event.release.tag_name || github.sha }}-micropython
+      RELEASE_FILE: ${{ matrix.name }}-${{ github.event.release.tag_name || github.sha }}-pimoroni-micropython
       PIMORONI_PICO_DIR: "${{ github.workspace }}/pimoroni-pico-${{ github.sha }}"
       MICROPY_BOARD_DIR: "${{ github.workspace }}/pimoroni-pico-${{ github.sha }}/micropython/board/${{ matrix.BOARD }}"
       USER_C_MODULES: "${{ github.workspace }}/pimoroni-pico-${{ github.sha }}/micropython/modules/micropython-${{ matrix.name }}.cmake"
@@ -92,12 +94,6 @@ jobs:
       run: |
         source $BUILD_TOOLS
         micropython_build_mpy_cross
-
-    - name: "HACK: CMakeLists.txt Disable C++ Exceptions Patch"
-      shell: bash
-      run: |
-        source $BUILD_TOOLS
-        hack_patch_micropython_disable_exceptions
 
     - name: "HACK: Pico SDK Patch"
       shell: bash
