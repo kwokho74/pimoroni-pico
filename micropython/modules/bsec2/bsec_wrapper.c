@@ -43,7 +43,7 @@ static void tuple_to_sensor_configuration(mp_obj_t tuple, bsec_sensor_configurat
     size_t len;
     mp_obj_get_array(tuple, &len, &items);
     if (len != 2) {
-        mp_raise_ValueError("Tuple length must be 2");
+        mp_raise_ValueError(MP_ERROR_TEXT("Tuple length must be 2"));
     }
 
     config->sample_rate = mp_obj_get_float(items[0]);
@@ -105,7 +105,7 @@ static mp_obj_t bsec_set_configuration_wrapper(mp_obj_t config_obj) {
     mp_get_buffer_raise(config_obj, &config_bufinfo, MP_BUFFER_READ);
 
     if (config_bufinfo.len > BSEC_MAX_PROPERTY_BLOB_SIZE) {
-        mp_raise_ValueError("Configuration size too large");
+        mp_raise_ValueError(MP_ERROR_TEXT("Configuration size too large"));
     }
 
     uint8_t work_buffer[BSEC_MAX_WORKBUFFER_SIZE];
@@ -134,7 +134,7 @@ static mp_obj_t bsec_set_state_wrapper(mp_obj_t state_obj) {
     mp_get_buffer_raise(state_obj, &state_bufinfo, MP_BUFFER_READ);
 
     if (state_bufinfo.len > BSEC_MAX_STATE_BLOB_SIZE) {
-        mp_raise_ValueError("State size too large");
+        mp_raise_ValueError(MP_ERROR_TEXT("State size too large"));
     }
 
     uint8_t work_buffer[BSEC_MAX_WORKBUFFER_SIZE];
@@ -216,7 +216,7 @@ static mp_obj_t bsec_do_steps_wrapper(mp_obj_t inputs_tuple) {
         size_t len;
         mp_obj_get_array(inputs[i], &len, &items);
         if (len != 4) {
-            mp_raise_ValueError("Input tuple length must be 4");
+            mp_raise_ValueError(MP_ERROR_TEXT("Input tuple length must be 4"));
         }
 
         bsec_inputs[i].sensor_id = mp_obj_get_int(items[0]);
